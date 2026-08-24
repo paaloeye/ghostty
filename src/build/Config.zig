@@ -70,6 +70,18 @@ vt_features: TerminalBuildOptions.Features = .{},
 /// rather than as the root project.
 is_dep: bool = false,
 
+/// macOS code signing and notarization
+macos_codesign: bool = false,
+macos_codesign_identity: ?[]const u8 = null,
+macos_notarize: bool = false,
+macos_keychain_profile: ?[]const u8 = null,
+macos_api_key: ?[]const u8 = null,
+macos_api_key_id: ?[]const u8 = null,
+macos_api_issuer: ?[]const u8 = null,
+macos_apple_id: ?[]const u8 = null,
+macos_notary_password: ?[]const u8 = null,
+macos_team_id: ?[]const u8 = null,
+
 /// Environmental properties
 env: *const std.process.Environ.Map,
 
@@ -559,6 +571,73 @@ pub fn init(b: *std.Build, appVersion: []const u8, libVersion: []const u8) !Conf
         "emit-macos-app",
         "Build and install the macOS app bundle.",
     ) orelse !config.emit_lib_vt and config.emit_xcframework;
+
+    config.macos_codesign = b.option(
+        bool,
+        "macos-codesign",
+        "Codesign the macOS app bundle. Defaults to true for ReleaseFast builds.",
+    ) orelse (optimize == .ReleaseFast and target.result.os.tag.isDarwin() and builtin.target.os.tag.isDarwin());
+
+    config.macos_codesign_identity = b.option(
+        []const u8,
+        "macos-codesign-identity",
+        "Code signing identity to use (defaults to auto-detecting Developer ID Application or Apple Development).",
+    );
+
+    config.macos_notarize = b.option(
+        bool,
+        "macos-notarize",
+        "Notarize the macOS app bundle with Apple Notary service.",
+    ) orelse (config.macos_codesign and (config.macos_keychain_profile != null or
+        config.macos_api_key != null or
+        config.macos_apple_id != null or
+        b.graph.environ_map.get("KEYCHAIN_PROFILE") != null or
+        b.graph.environ_map.get("NOTARIZE_KEYCHAIN_PROFILE") != null or
+        b.graph.environ_map.get("ASC_API_KEY_PATH") != null or
+        b.graph.environ_map.get("ASC_KEY_FILE") != null or
+        b.graph.environ_map.get("APPLE_ID") != null));
+
+    config.macos_keychain_profile = b.option(
+        []const u8,
+        "macos-keychain-profile",
+        "Keychain profile name for notarytool.",
+    );
+
+    config.macos_api_key = b.option(
+        []const u8,
+        "macos-api-key",
+        "Path to App Store Connect API key (.p8 file) for notarization.",
+    );
+
+    config.macos_api_key_id = b.option(
+        []const u8,
+        "macos-api-key-id",
+        "App Store Connect API key ID for notarization.",
+    );
+
+    config.macos_api_issuer = b.option(
+        []const u8,
+        "macos-api-issuer",
+        "App Store Connect API issuer UUID for notarization.",
+    );
+
+    config.macos_apple_id = b.option(
+        []const u8,
+        "macos-apple-id",
+        "Apple ID for notarization.",
+    );
+
+    config.macos_notary_password = b.option(
+        []const u8,
+        "macos-notary-password",
+        "App-specific password for notarization.",
+    );
+
+    config.macos_team_id = b.option(
+        []const u8,
+        "macos-team-id",
+        "Apple Developer Team ID for notarization.",
+    );
 
     //---------------------------------------------------------------
     // System Packages
