@@ -28,10 +28,8 @@ pub fn init(
 ) !Ghostty {
     const xc_config = switch (config.optimize) {
         .Debug => "Debug",
-        .ReleaseSafe,
-        .ReleaseSmall,
-        .ReleaseFast,
-        => "ReleaseLocal",
+        .ReleaseSafe, .ReleaseSmall => "ReleaseLocal",
+        .ReleaseFast => if (config.macos_codesign) "Release" else "ReleaseLocal",
     };
 
     const xc_arch: ?[]const u8 = switch (deps.xcframework.target) {
@@ -89,6 +87,51 @@ pub fn init(
 
         break :build step;
     };
+
+    // Our step to codesign and notarize the app bundle if configured.
+    const sign_step = if (config.macos_codesign) sign_step: {
+        const step = RunStep.create(b, "codesign & notarize");
+        step.has_side_effects = true;
+        step.cwd = b.path("");
+        step.addFileArg(b.path("macos/sign_and_notarize.sh"));
+        step.addFileArg(b.path(app_path));
+
+        if (config.macos_codesign_identity) |identity| {
+            step.addArgs(&.{ "--identity", identity });
+        }
+
+        if (config.macos_notarize) {
+            step.addArg("--notarize");
+        } else {
+            step.addArg("--no-notarize");
+        }
+
+        if (config.macos_keychain_profile) |v| {
+            step.addArgs(&.{ "--keychain-profile", v });
+        }
+        if (config.macos_api_key) |v| {
+            step.addArgs(&.{ "--api-key", v });
+        }
+        if (config.macos_api_key_id) |v| {
+            step.addArgs(&.{ "--api-key-id", v });
+        }
+        if (config.macos_api_issuer) |v| {
+            step.addArgs(&.{ "--api-issuer", v });
+        }
+        if (config.macos_apple_id) |v| {
+            step.addArgs(&.{ "--apple-id", v });
+        }
+        if (config.macos_notary_password) |v| {
+            step.addArgs(&.{ "--password", v });
+        }
+        if (config.macos_team_id) |v| {
+            step.addArgs(&.{ "--team-id", v });
+        }
+
+        step.step.dependOn(&build.step);
+        step.expectExitCode(0);
+        break :sign_step step;
+    } else null;
 
     const xctest = xctest: {
         const env_map = try b.allocator.create(std.process.Environ.Map);
@@ -149,6 +192,7 @@ pub fn init(
 
         // Open depends on the app
         open.step.dependOn(&build.step);
+        if (sign_step) |s| open.step.dependOn(&s.step);
         open.step.dependOn(&disable_save_state.step);
 
         // This overrides our default behavior and forces logs to show
@@ -173,7 +217,11 @@ pub fn init(
         step.addArgs(&.{ "cp", "-R" });
         step.addFileArg(b.path(app_path));
         step.addArg(b.fmt("{s}", .{b.install_path}));
-        step.step.dependOn(&build.step);
+        if (sign_step) |s| {
+            step.step.dependOn(&s.step);
+        } else {
+            step.step.dependOn(&build.step);
+        }
         break :copy step;
     };
 
