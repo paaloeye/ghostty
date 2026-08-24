@@ -766,25 +766,27 @@ const Preview = struct {
                 child.fill(.{ .style = self.ui_standard() });
 
                 const key_help = [_]struct { keys: []const u8, help: []const u8 }{
+                    // zig fmt: off
                     .{ .keys = "^C, q, ESC", .help = "Quit." },
-                    .{ .keys = "F1, ?, ^H", .help = "Toggle help window." },
-                    .{ .keys = "f", .help = "Cycle through theme filters." },
-                    .{ .keys = "k, ↑", .help = "Move up 1 theme." },
-                    .{ .keys = "ScrollUp", .help = "Move up 1 theme." },
-                    .{ .keys = "PgUp", .help = "Move up 20 themes." },
-                    .{ .keys = "j, ↓", .help = "Move down 1 theme." },
+                    .{ .keys = "F1, ?, ^H",  .help = "Toggle help window." },
+                    .{ .keys = "f",          .help = "Cycle through theme filters." },
+                    .{ .keys = "k, ↑",       .help = "Move up 1 theme." },
+                    .{ .keys = "ScrollUp",   .help = "Move up 1 theme." },
+                    .{ .keys = "PgUp",       .help = "Move up 20 themes." },
+                    .{ .keys = "j, ↓",       .help = "Move down 1 theme." },
                     .{ .keys = "ScrollDown", .help = "Move down 1 theme." },
-                    .{ .keys = "PgDown", .help = "Move down 20 themes." },
-                    .{ .keys = "h, x", .help = "Show palette numbers in hexadecimal." },
-                    .{ .keys = "d", .help = "Show palette numbers in decimal." },
-                    .{ .keys = "c", .help = "Copy theme name to the clipboard." },
-                    .{ .keys = "C", .help = "Copy theme path to the clipboard." },
-                    .{ .keys = "Home, g", .help = "Go to the start of the list." },
-                    .{ .keys = "End, G", .help = "Go to the end of the list." },
-                    .{ .keys = "/", .help = "Start search." },
-                    .{ .keys = "^X, ^/", .help = "Clear search." },
-                    .{ .keys = "⏎", .help = "Save theme or close search window." },
-                    .{ .keys = "w", .help = "Write theme to auto config file." },
+                    .{ .keys = "PgDown",     .help = "Move down 20 themes." },
+                    .{ .keys = "h, x",       .help = "Show palette numbers in hexadecimal." },
+                    .{ .keys = "d",          .help = "Show palette numbers in decimal." },
+                    .{ .keys = "c",          .help = "Copy theme name to the clipboard." },
+                    .{ .keys = "C",          .help = "Copy theme path to the clipboard." },
+                    .{ .keys = "Home, g",    .help = "Go to the start of the list." },
+                    .{ .keys = "End, G",     .help = "Go to the end of the list." },
+                    .{ .keys = "/",          .help = "Start search." },
+                    .{ .keys = "^X, ^/",     .help = "Clear search." },
+                    .{ .keys = "⏎",          .help = "Save theme or close search window." },
+                    .{ .keys = "w",          .help = "Write theme to auto config file." },
+                    // zig fmt: on
                 };
 
                 for (key_help, 0..) |help, captured_i| {
