@@ -71,6 +71,7 @@ pub const Shape = enum(c_int) {
 
     /// Build cursor shape from string or null if its unknown.
     pub fn fromString(v: []const u8) ?Shape {
+        if (v.len == 0) return .default;
         return string_map.get(v);
     }
 

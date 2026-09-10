@@ -31,6 +31,7 @@ pub const FontStyle = Config.FontStyle;
 pub const FreetypeLoadFlags = Config.FreetypeLoadFlags;
 pub const Keybinds = Config.Keybinds;
 pub const MouseShiftCapture = Config.MouseShiftCapture;
+pub const MousePointerStyle = Config.MousePointerStyle;
 pub const MouseScrollMultiplier = Config.MouseScrollMultiplier;
 pub const NonNativeFullscreen = Config.NonNativeFullscreen;
 pub const Fullscreen = Config.Fullscreen;

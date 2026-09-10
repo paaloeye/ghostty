@@ -250,6 +250,8 @@ extension Ghostty {
             // can do SOMETHING.
             super.init(id: uuid, frame: NSRect(x: 0, y: 0, width: 800, height: 600))
 
+            self.pointerStyle = self.derivedConfig.mousePointerStyle == .arrow ? .default : .horizontalText
+
             // Our cache of screen data
             cachedScreenContents = .init(duration: .milliseconds(500)) { [weak self] in
                 guard let self else { return "" }
@@ -512,7 +514,7 @@ extension Ghostty {
                 pointerStyle = .default
 
             case GHOSTTY_MOUSE_SHAPE_TEXT:
-                pointerStyle = .horizontalText
+                pointerStyle = derivedConfig.mousePointerStyle == .arrow ? .default : .horizontalText
 
             case GHOSTTY_MOUSE_SHAPE_GRAB:
                 pointerStyle = .grabIdle
@@ -768,7 +770,15 @@ extension Ghostty {
             // Update our derived config
             DispatchQueue.main.async { [weak self] in
                 guard let self else { return }
+                let oldStyle = self.derivedConfig.mousePointerStyle
                 self.derivedConfig = DerivedConfig(config)
+                if oldStyle != self.derivedConfig.mousePointerStyle {
+                    if self.pointerStyle == .horizontalText && self.derivedConfig.mousePointerStyle == .arrow {
+                        self.pointerStyle = .default
+                    } else if self.pointerStyle == .default && self.derivedConfig.mousePointerStyle == .default {
+                        self.pointerStyle = .horizontalText
+                    }
+                }
 
                 // If the cached OSC 11 background color disagrees with the new
                 // config-derived background, drop it so window chrome follows
@@ -1835,6 +1845,7 @@ extension Ghostty {
             let windowTitleFontFamily: String?
             let windowAppearance: NSAppearance?
             let scrollbar: Ghostty.Config.Scrollbar
+            let mousePointerStyle: Ghostty.Config.MousePointerStyle
 
             init() {
                 self.backgroundColor = Color(NSColor.windowBackgroundColor)
@@ -1844,6 +1855,7 @@ extension Ghostty {
                 self.windowTitleFontFamily = nil
                 self.windowAppearance = nil
                 self.scrollbar = .system
+                self.mousePointerStyle = .default
             }
 
             init(_ config: Ghostty.Config) {
@@ -1854,6 +1866,7 @@ extension Ghostty {
                 self.windowTitleFontFamily = config.windowTitleFontFamily
                 self.windowAppearance = .init(ghosttyConfig: config)
                 self.scrollbar = config.scrollbar
+                self.mousePointerStyle = config.mousePointerStyle
             }
         }
 

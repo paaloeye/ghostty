@@ -314,6 +314,7 @@ const DerivedConfig = struct {
     font: font.SharedGridSet.DerivedConfig,
     mouse_interval: u64,
     mouse_hide_while_typing: bool,
+    mouse_pointer_style: configpkg.MousePointerStyle,
     mouse_reporting: bool,
     mouse_scroll_multiplier: configpkg.MouseScrollMultiplier,
     mouse_shift_capture: configpkg.MouseShiftCapture,
@@ -394,6 +395,7 @@ const DerivedConfig = struct {
             .font = try font.SharedGridSet.DerivedConfig.init(alloc, config),
             .mouse_interval = config.@"click-repeat-interval" * 1_000_000, // 500ms
             .mouse_hide_while_typing = config.@"mouse-hide-while-typing",
+            .mouse_pointer_style = config.@"mouse-pointer-style",
             .mouse_reporting = config.@"mouse-reporting",
             .mouse_scroll_multiplier = config.@"mouse-scroll-multiplier",
             .mouse_shift_capture = config.@"mouse-shift-capture",
@@ -1049,7 +1051,7 @@ pub fn handleMessage(self: *Surface, msg: Message) !void {
             _ = try self.rt_app.performAction(
                 .{ .surface = self },
                 .mouse_shape,
-                shape,
+                self.effectiveMouseShape(shape),
             );
         },
 
@@ -1691,7 +1693,7 @@ fn mouseRefreshLinks(
         _ = try self.rt_app.performAction(
             .{ .surface = self },
             .mouse_shape,
-            self.io.terminal.mouse_shape,
+            self.effectiveMouseShape(self.io.terminal.mouse_shape),
         );
         _ = try self.rt_app.performAction(
             .{ .surface = self },
@@ -1843,6 +1845,13 @@ pub fn updateConfig(
         .config_change,
         .{ .config = config },
     );
+
+    // If mouse pointer style changed, update mouse shape
+    _ = self.rt_app.performAction(
+        .{ .surface = self },
+        .mouse_shape,
+        self.effectiveMouseShape(self.io.terminal.mouse_shape),
+    ) catch {};
 }
 
 const InitialSizeError = error{
@@ -2756,7 +2765,7 @@ pub fn keyCallback(
             _ = try self.rt_app.performAction(
                 .{ .surface = self },
                 .mouse_shape,
-                self.io.terminal.mouse_shape,
+                self.effectiveMouseShape(self.io.terminal.mouse_shape),
             );
             _ = try self.rt_app.performAction(
                 .{ .surface = self },
@@ -2776,6 +2785,7 @@ pub fn keyCallback(
         .mods = self.mouse.mods,
         .over_link = self.mouse.over_link,
         .hidden = self.mouse.hidden,
+        .pointer_style = self.config.mouse_pointer_style,
     }).keyToMouseShape()) |shape| _ = try self.rt_app.performAction(
         .{ .surface = self },
         .mouse_shape,
@@ -4548,7 +4558,7 @@ pub fn cursorPosCallback(
             _ = try self.rt_app.performAction(
                 .{ .surface = self },
                 .mouse_shape,
-                self.io.terminal.mouse_shape,
+                self.effectiveMouseShape(self.io.terminal.mouse_shape),
             );
             _ = try self.rt_app.performAction(
                 .{ .surface = self },
@@ -4778,6 +4788,13 @@ fn showMouse(self: *Surface) void {
     ) catch |err| {
         log.warn("apprt failed to set mouse visibility err={}", .{err});
     };
+}
+
+fn effectiveMouseShape(self: *Surface, shape: terminal.MouseShape) terminal.MouseShape {
+    if (shape == .text and self.config.mouse_pointer_style == .arrow) {
+        return .default;
+    }
+    return shape;
 }
 
 /// Perform a binding action. A binding is a keybinding. This function

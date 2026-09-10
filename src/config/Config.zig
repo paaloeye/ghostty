@@ -1001,6 +1001,17 @@ palette: Palette = .{},
 /// The default value is "3" for discrete devices and "1" for precision devices.
 @"mouse-scroll-multiplier": MouseScrollMultiplier = .default,
 
+/// Sets the mouse pointer style when hovering over the terminal.
+///
+/// Available options:
+///
+/// - `default` Standard terminal behavior; displays a text cursor (I-beam)
+///   when hovering over terminal text, and an arrow pointer when in mouse
+///   tracking mode.
+/// - `arrow` Keeps the system arrow pointer cursor when hovering over
+///   terminal text.
+@"mouse-pointer-style": MousePointerStyle = .default,
+
 /// The opacity level (opposite of transparency) of the background. A value of
 /// 1 is fully opaque and a value of 0 is fully transparent. A value less than 0
 /// or greater than 1 will be clamped to the nearest valid value.
@@ -9296,6 +9307,12 @@ pub const MouseShiftCapture = enum {
     true,
     always,
     never,
+};
+
+/// See mouse-pointer-style
+pub const MousePointerStyle = enum {
+    default,
+    arrow,
 };
 
 /// See mouse-scroll-multiplier

@@ -383,6 +383,17 @@ extension Ghostty {
             return MacDockDropBehavior(rawValue: str) ?? defaultValue
         }
 
+        var mousePointerStyle: MousePointerStyle {
+            let defaultValue = MousePointerStyle.default
+            guard let config = self.config else { return defaultValue }
+            var v: UnsafePointer<Int8>?
+            let key = "mouse-pointer-style"
+            guard ghostty_config_get(config, &v, key, UInt(key.lengthOfBytes(using: .utf8))) else { return defaultValue }
+            guard let ptr = v else { return defaultValue }
+            let str = String(cString: ptr)
+            return MousePointerStyle(rawValue: str) ?? defaultValue
+        }
+
         var macosWindowShadow: Bool {
             guard let config = self.config else { return false }
             var v = false
@@ -834,6 +845,11 @@ extension Ghostty.Config {
         case allow
         case deny
         case ask
+    }
+
+    enum MousePointerStyle: String {
+        case `default`
+        case arrow
     }
 
     enum Scrollbar: String {
