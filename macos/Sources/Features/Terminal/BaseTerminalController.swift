@@ -62,6 +62,9 @@ class BaseTerminalController: NSWindowController,
     /// True when any surface in this controller currently has an active bell.
     @Published private(set) var bell: Bool = false
 
+    /// True when any split in this controller is currently zoomed.
+    @Published private(set) var isSurfaceZoomed: Bool = false
+
     /// Whether the terminal surface should focus when the mouse is over it.
     var focusFollowsMouse: Bool {
         self.derivedConfig.focusFollowsMouse
@@ -334,6 +337,8 @@ class BaseTerminalController: NSWindowController,
     ///
     /// Subclasses should call super first.
     func surfaceTreeDidChange(from: SplitTree<Ghostty.SurfaceView>, to: SplitTree<Ghostty.SurfaceView>) {
+        isSurfaceZoomed = to.isZoomed
+
         for surfaceView in from where !to.contains(surfaceView) {
             cancelPendingClipboardConfirmation(for: surfaceView)
         }
