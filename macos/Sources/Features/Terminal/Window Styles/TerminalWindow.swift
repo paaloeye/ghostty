@@ -363,8 +363,12 @@ class TerminalWindow: NSWindow {
             // We want to show it if we are zoomed.
             resetZoomTabButton.isHidden = !surfaceIsZoomed
 
-            DispatchQueue.main.async {
+            if Thread.isMainThread {
                 self.viewModel.isSurfaceZoomed = self.surfaceIsZoomed
+            } else {
+                DispatchQueue.main.async {
+                    self.viewModel.isSurfaceZoomed = self.surfaceIsZoomed
+                }
             }
         }
     }
