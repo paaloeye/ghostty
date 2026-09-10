@@ -8,6 +8,7 @@ const SurfaceMouse = @This();
 const std = @import("std");
 const builtin = @import("builtin");
 const input = @import("input.zig");
+const config = @import("config.zig");
 const terminal = @import("terminal/main.zig");
 const MouseShape = terminal.MouseShape;
 
@@ -31,6 +32,9 @@ over_link: bool,
 /// True if the mouse pointer is currently hidden.
 hidden: bool,
 
+/// The configured mouse pointer style.
+pointer_style: config.MousePointerStyle = .default,
+
 /// Translates key state to mouse shape, called during key events. This mainly
 /// handles overrides on key presses depending on whether or not we are in
 /// mouse tracking mode, however it is also responsible for resetting cursor
@@ -49,6 +53,11 @@ pub fn keyToMouseShape(self: SurfaceMouse) ?MouseShape {
         return null;
     }
 
+    const normal_shape: MouseShape = switch (self.pointer_style) {
+        .default => .text,
+        .arrow => .default,
+    };
+
     // Handle possible overrides depending on mouse tracking state.
     switch (self.mouse_event != .none) {
         true => {
@@ -59,7 +68,7 @@ pub fn keyToMouseShape(self: SurfaceMouse) ?MouseShape {
                 return .crosshair;
             } else if (isMouseModeOverrideState(self.mods)) {
                 // Normal override state
-                return .text;
+                return normal_shape;
             }
         },
 
@@ -72,7 +81,7 @@ pub fn keyToMouseShape(self: SurfaceMouse) ?MouseShape {
                 // Shift shows an I-beam so selection is obvious even when
                 // the application cursor is not text (OSC 22). Release
                 // restores mouse_shape below.
-                return .text;
+                return normal_shape;
             }
         },
     }
@@ -80,6 +89,9 @@ pub fn keyToMouseShape(self: SurfaceMouse) ?MouseShape {
     // No overrides means we just revert back to the stored terminal mouse
     // shape. Note that this may be different than what has been currently sent
     // to the apprt, so this will force the reset.
+    if (self.mouse_shape == .text and self.pointer_style == .arrow) {
+        return .default;
+    }
     return self.mouse_shape;
 }
 
@@ -291,6 +303,57 @@ test "keyToMouseShape" {
         };
 
         const want: MouseShape = .crosshair;
+        const got = m.keyToMouseShape();
+        try testing.expect(want == got);
+    }
+
+    {
+        // arrow pointer style, no mods (no mouse tracking)
+        const m: SurfaceMouse = .{
+            .physical_key = .shift_left,
+            .mouse_event = .none,
+            .mouse_shape = .default,
+            .mods = .{},
+            .over_link = false,
+            .hidden = false,
+            .pointer_style = .arrow,
+        };
+
+        const want: MouseShape = .default;
+        const got = m.keyToMouseShape();
+        try testing.expect(want == got);
+    }
+
+    {
+        // arrow pointer style -> crosshair (no mouse tracking)
+        const m: SurfaceMouse = .{
+            .physical_key = .alt_left,
+            .mouse_event = .none,
+            .mouse_shape = .default,
+            .mods = .{ .ctrl = true, .super = true, .alt = true },
+            .over_link = false,
+            .hidden = false,
+            .pointer_style = .arrow,
+        };
+
+        const want: MouseShape = .crosshair;
+        const got = m.keyToMouseShape();
+        try testing.expect(want == got);
+    }
+
+    {
+        // arrow pointer style, mouse tracking override with shift
+        const m: SurfaceMouse = .{
+            .physical_key = .shift_left,
+            .mouse_event = .x10,
+            .mouse_shape = .default,
+            .mods = .{ .shift = true },
+            .over_link = false,
+            .hidden = false,
+            .pointer_style = .arrow,
+        };
+
+        const want: MouseShape = .default;
         const got = m.keyToMouseShape();
         try testing.expect(want == got);
     }
